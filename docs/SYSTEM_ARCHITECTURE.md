@@ -1,6 +1,6 @@
 # System architecture
 
-Contriq is one Next.js application with a local PostgreSQL database. The web process reads published fictional evaluations. Trusted command-line scripts import evidence and publish calculations.
+Contriq is one Next.js application backed by PostgreSQL. The hosted Worker reads published fictional evaluations from Supabase through Hyperdrive. Trusted command-line scripts import evidence and publish calculations.
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,7 @@ flowchart LR
 | Presentation | `app/` and `src/components/` | Overview, directory, detail, methodology, URL-based filters and accessible disclosures |
 | Public HTTP interface | `app/api/` and `src/http.ts` | Validate query inputs, return JSON and safe errors |
 | Read model | `src/server/queries.ts` | Resolve a published run and project stored evidence, results and rubrics |
-| Database connections | `src/server/db.ts` | Reader/owner pools, bounded waits and transaction cleanup |
+| Database connections | `src/server/db.ts`, `src/server/read-db.ts` | Local pools, hosted request connections and transaction cleanup |
 | Source processing | `src/domain/evidence.ts`, `src/server/ingest.ts` | Normalize checklists, preserve revisions and reject conflicting replay |
 | Demonstration data | `src/domain/fixtures.ts` | Generate 200 fictional people and heterogeneous source records from seed 42 |
 | Rubrics and engine | `src/domain/rubrics.ts`, `src/domain/engine.ts` | Role-specific definitions, exact ratio arithmetic and traceable outcomes |

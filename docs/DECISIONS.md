@@ -26,8 +26,10 @@ Updated 23 November 2026 for the local V1 implementation. The user authorized im
 
 See [SCORING_CONTRACT.md](SCORING_CONTRACT.md) for every actual role-specific metric, source, formula, eligibility rule and missing-data behavior. A low result describes the observed checklist ratios. The application produces no personality, popularity or employment recommendation.
 
-## Later decisions
+## Hosting
 
-The managed PostgreSQL provider, Cloudflare adapter, request-scoped Hyperdrive wiring, production authentication/network boundaries, backups and deployment verification remain later hosting work. Cloudflare currently recommends beta vinext for Next.js APIs. A managed runtime needs compatibility testing before adoption. [Cloudflare framework guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/)
+Use vinext on Cloudflare Workers with Supabase Postgres and a read-only Hyperdrive connection. A single GitHub Actions workflow orders database migrations before Worker deployment. Hosting this fictional dataset keeps repository secrets separate from the public reader. Production authentication and backup requirements for real employee data remain open.
+
+## Later decisions
 
 V2/V3 features, real employee data, external imports, RAG, authentication and rankings require their own scoped product decisions. Existing synthetic scores cannot establish a scientifically validated HR rubric.

@@ -59,6 +59,6 @@ Start with [study/START_HERE.md](study/START_HERE.md). It gives a 2–3-hour rou
 | [Scoring contract](docs/SCORING_CONTRACT.md) | Provisional role-specific measurements and exact mathematics |
 | [Handoff](docs/HANDOFF.md) | Current local state and review entry points |
 
-## Later hosting
+## Hosting
 
-This delivery runs on local Next.js. Cloudflare is the intended later host. The adapter, managed PostgreSQL provider and request-scoped Hyperdrive connection wiring need a separate deployment pass. See the [technical architecture](docs/TECHNICAL_ARCHITECTURE.md). V1 has no public write API, employee authentication, external uploads, RAG or LLM scoring.
+Contriq runs on Cloudflare Workers and reads the fictional dataset from Supabase Postgres. Pushes to `main` run the Worker build, apply pending database migrations, deploy the Worker and check the public app. [Open Contriq](https://contriq-oswarteck.pdumpy.workers.dev) · [Technical architecture](docs/TECHNICAL_ARCHITECTURE.md)

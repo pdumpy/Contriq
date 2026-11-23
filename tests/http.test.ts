@@ -37,5 +37,10 @@ test("invalid role, pagination and ambiguous query parameters are rejected", () 
 test("query failures return a useful 400 without exposing the error payload", async () => {
   const reply = apiError(new Error("DUPLICATE_QUERY"));
   assert.equal(reply.status, 400);
-  assert.equal((await reply.json()).error.code, "INVALID_QUERY");
+  assert.deepEqual(await reply.json(), {
+    error: {
+      code: "INVALID_QUERY",
+      message: "Check the search, job family, result state, page or run identifier.",
+    },
+  });
 });

@@ -32,8 +32,8 @@ Route handlers return structured 400, 404 or 503 responses. Pages render an expl
 
 The cohort is small and fixed at 200. The query module loads a published snapshot from PostgreSQL and applies directory search/filter/pagination to that bounded snapshot. This keeps historical role/name context consistent. Large datasets would need indexed SQL search and pagination over a persistent snapshot projection. Raw evidence is loaded only for one detail view.
 
-## Cloudflare compatibility research
+## Hosted runtime
 
-Cloudflare currently recommends vinext for its Next.js API surface on Workers, and labels it beta. This local delivery keeps standard Next.js development while the hosting choice awaits a separately authorized deployment review. The repository's earlier OpenNext alternative is a deployment candidate whose support needs checking against the selected Next.js version. [Cloudflare Next.js guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/)
+The production build uses vinext on Cloudflare Workers with Node.js compatibility. It opens a request-scoped `pg.Client` through Hyperdrive to the Mumbai Supabase project. Hyperdrive verifies the origin certificate and uses the read-only `contriq_reader` role. Standard Next.js uses the local reader pool.
 
-The installed pg version exceeds Cloudflare Hyperdrive's documented minimum. A future Worker needs the appropriate Node.js compatibility flag and a request-scoped Client using the Hyperdrive binding. The local Node pool is the local-development implementation. Worker bindings, managed credentials, region placement, backups and a Worker-runtime smoke test remain part of the later hosting work. [Cloudflare node-postgres guide](https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/node-postgres/)
+GitHub Actions builds the Worker, applies pending migrations in the private `contriq` schema using the `contriq_release` role over verified TLS, then deploys and checks health. Releases retain the existing published run unless the scoring engine changes. `CONTRIQ_RELEASE_DATABASE_URL`, `CONTRIQ_RELEASE_DATABASE_CA` and `CLOUDFLARE_API_TOKEN` live in GitHub Actions secrets. [Deployment workflow](../.github/workflows/deploy.yml)

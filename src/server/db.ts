@@ -1,7 +1,17 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { Pool, type PoolClient } from "pg";
 
 const pools: Partial<Record<"reader" | "admin", Pool>> = {};
+const releaseDatabase = new AsyncLocalStorage<Pool>();
+
+export function withReleaseDatabase<T>(pool: Pool, operation: () => Promise<T>): Promise<T> {
+  return releaseDatabase.run(pool, operation);
+}
+
 export function getPool(admin = false): Pool {
+  const releasePool = admin ? releaseDatabase.getStore() : undefined;
+  if (releasePool) return releasePool;
+
   const key = admin ? "admin" : "reader";
   if (!pools[key]) {
     const connectionString = admin

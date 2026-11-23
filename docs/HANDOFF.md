@@ -1,6 +1,6 @@
 # Handoff
 
-Updated 23 November 2026 after the complete local V1 build.
+Updated 23 November 2026 after the V1 hosting setup.
 
 | Item | Observed state |
 | --- | --- |
@@ -18,7 +18,8 @@ Updated 23 November 2026 after the complete local V1 build.
 | UI | Overview, searchable/filterable/paginated People, detailed calculation/evidence, methodology role views |
 | Checks | Typecheck, zero-warning lint, 32 unit/integration + 5 HTTP tests, production build and production HTTP smoke passed |
 | Documentation | Six engineering documents updated, detailed scoring contract, 12 study guides |
-| Hosting | Local Next.js and PostgreSQL. Cloudflare deployment is pending. |
+| Hosting | [Cloudflare Worker](https://contriq-oswarteck.pdumpy.workers.dev) on `pdumpy` with Supabase Postgres in Mumbai. Pushes to `main` run [the deployment workflow](../.github/workflows/deploy.yml). |
+| Hosted dataset | Run 1, 200 fictional employees, 188 calculated and 12 insufficient outcomes |
 
 ## Review the local result
 
@@ -32,7 +33,7 @@ The full implementation prompt confirmed the fixed 90-day mid-level cohort and a
 
 ## Later work
 
-The next action is the owner's application and study-material review. A separately authorized hosting pass must select and verify the adapter and managed PostgreSQL provider, replace local trust and network assumptions, connect request-scoped database access, test the Worker runtime and establish backups.
+The next action is the owner's application and study-material review. Authentication, access boundaries and backup requirements remain open for a future release with real data.
 
 V2/V3 scope, real accounts, external uploads and RAG remain later product decisions. Prior development runs retain their stored components and source references. Replay rejects unsupported engine versions.
 

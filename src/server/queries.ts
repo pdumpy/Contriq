@@ -1,4 +1,4 @@
-import { getPool } from "./db";
+import { withReadDatabase, type DatabaseReader } from "./read-db";
 import type { RunRow } from "./model";
 import {
   JOB_FAMILIES,
@@ -16,23 +16,23 @@ import {
   type CoverageView,
 } from "../types";
 
-async function selectRun(runId?: string): Promise<RunRow | null> {
+async function selectRun(db: DatabaseReader, runId?: string): Promise<RunRow | null> {
   if (runId !== undefined && !/^[1-9][0-9]*$/.test(runId))
     throw new Error("Invalid run ID");
-  const { rows } = await getPool().query(
+  const { rows } = await db.query(
     `SELECT id::text,input_manifest,engine_version,status FROM scoring_runs WHERE status='published' AND evaluation_start=$1 AND evaluation_end=$2 ${runId ? "AND id=$3" : ""} ORDER BY scoring_runs.id DESC LIMIT 1`,
     runId ? [PERIOD.start, PERIOD.end, runId] : [PERIOD.start, PERIOD.end],
   );
   return rows[0] ?? null;
 }
-async function rowsForRun(run: RunRow | null): Promise<EmployeeRow[]> {
+async function rowsForRun(db: DatabaseReader, run: RunRow | null): Promise<EmployeeRow[]> {
   if (!run) return [];
-  const { rows } = await getPool().query(
+  const { rows } = await db.query(
     `SELECT s.employee_id,total_score::float8,s.status,r.version FROM scores s JOIN scoring_rubrics r ON r.id=s.rubric_id WHERE run_id=$1`,
     [run.id],
   );
   const outcomes = new Map(rows.map((row) => [row.employee_id, row]));
-  const coverage = await getPool().query(
+  const coverage = await db.query(
     "SELECT id,completeness_status FROM evidence_coverage WHERE id=ANY($1::uuid[])",
     [run.input_manifest.employees.flatMap((item) => item.coverageIds)],
   );
@@ -59,11 +59,12 @@ async function rowsForRun(run: RunRow | null): Promise<EmployeeRow[]> {
     };
   });
 }
-export async function getEmployees(
-  params: DirectoryParams = {},
+async function readEmployees(
+  db: DatabaseReader,
+  params: DirectoryParams,
 ): Promise<DirectoryData> {
-  const run = await selectRun(params.runId);
-  let employees = await rowsForRun(run);
+  const run = await selectRun(db, params.runId);
+  let employees = await rowsForRun(db, run);
   const query = params.query?.trim().toLocaleLowerCase();
   if (query)
     employees = employees.filter((e) =>
@@ -90,9 +91,9 @@ export async function getEmployees(
     period: PERIOD,
   };
 }
-export async function getOverview(runId?: string): Promise<OverviewData> {
-  const run = await selectRun(runId);
-  const employees = await rowsForRun(run);
+async function readOverview(db: DatabaseReader, runId?: string): Promise<OverviewData> {
+  const run = await selectRun(db, runId);
+  const employees = await rowsForRun(db, run);
   const average = (items: EmployeeRow[]) =>
     items.length
       ? items.reduce((sum, e) => sum + e.coverage, 0) / items.length
@@ -136,11 +137,11 @@ export async function getOverview(runId?: string): Promise<OverviewData> {
   });
   let evidenceCounts = { valid: 0, invalid: 0, excluded: 0 };
   if (run) {
-    const evidence = await getPool().query(
+    const evidence = await db.query(
       "SELECT validation_status,count(*)::int count FROM evidence_records WHERE id=ANY($1::uuid[]) GROUP BY validation_status",
       [run.input_manifest.employees.flatMap((e) => e.evidenceIds)],
     );
-    const excluded = await getPool().query(
+    const excluded = await db.query(
       "SELECT count(DISTINCT l.fact_id)::int count FROM score_evidence_links l JOIN score_components c ON c.id=l.component_id JOIN scores s ON s.id=c.score_id WHERE s.run_id=$1 AND l.usage='excluded'",
       [run.id],
     );
@@ -166,44 +167,45 @@ export async function getOverview(runId?: string): Promise<OverviewData> {
     runId: run?.id ?? null,
   };
 }
-export async function getEmployee(
+async function readEmployee(
+  db: DatabaseReader,
   code: string,
   runId?: string,
 ): Promise<EmployeeDetail | null> {
-  const run = await selectRun(runId);
+  const run = await selectRun(db, runId);
   if (!run) return null;
-  const employee = (await rowsForRun(run)).find((e) => e.code === code);
+  const employee = (await rowsForRun(db, run)).find((e) => e.code === code);
   if (!employee) return null;
   const captured = run.input_manifest.employees.find(
     (e) => e.employee.id === employee.id,
   )!;
-  const scoreRows = await getPool().query(
+  const scoreRows = await db.query(
     "SELECT id,total_score::float8,status,reason_code,calculated_at FROM scores WHERE run_id=$1 AND employee_id=$2",
     [run.id, employee.id],
   );
   const score = scoreRows.rows[0];
   const [rubrics, components, records, facts, coverageRows, links] =
     await Promise.all([
-      getPool().query("SELECT rules FROM scoring_rubrics WHERE id=$1", [
+      db.query("SELECT rules FROM scoring_rubrics WHERE id=$1", [
         captured.rubricId,
       ]),
-      getPool().query(
+      db.query(
         "SELECT dimension,calculation_details FROM score_components WHERE score_id=$1 AND submetric IS NULL",
         [score.id],
       ),
-      getPool().query(
+      db.query(
         "SELECT * FROM evidence_records WHERE id=ANY($1::uuid[]) ORDER BY source,source_record_id,revision",
         [captured.evidenceIds],
       ),
-      getPool().query(
+      db.query(
         "SELECT *,value_number::float8 numerator FROM evidence_facts WHERE id=ANY($1::uuid[]) ORDER BY fact_key,id",
         [captured.factIds],
       ),
-      getPool().query(
+      db.query(
         "SELECT source,completeness_status,reason FROM evidence_coverage WHERE id=ANY($1::uuid[]) ORDER BY source",
         [captured.coverageIds],
       ),
-      getPool().query(
+      db.query(
         "SELECT DISTINCT fact_id FROM score_evidence_links l JOIN score_components c ON c.id=l.component_id WHERE c.score_id=$1 AND l.usage='used'",
         [score.id],
       ),
@@ -276,8 +278,22 @@ export async function getMethodology(): Promise<{
   rubrics: Rubric[];
   period: typeof PERIOD;
 }> {
-  const { rows } = await getPool().query(
-    "SELECT rules FROM scoring_rubrics WHERE status='active' ORDER BY job_family",
-  );
-  return { rubrics: rows.map((r) => r.rules), period: PERIOD };
+  return withReadDatabase(async (db) => {
+    const { rows } = await db.query(
+      "SELECT rules FROM scoring_rubrics WHERE status='active' ORDER BY job_family",
+    );
+    return { rubrics: rows.map((r) => r.rules), period: PERIOD };
+  });
+}
+
+export function getEmployees(params: DirectoryParams = {}): Promise<DirectoryData> {
+  return withReadDatabase((db) => readEmployees(db, params));
+}
+
+export function getOverview(runId?: string): Promise<OverviewData> {
+  return withReadDatabase((db) => readOverview(db, runId));
+}
+
+export function getEmployee(code: string, runId?: string): Promise<EmployeeDetail | null> {
+  return withReadDatabase((db) => readEmployee(db, code, runId));
 }
