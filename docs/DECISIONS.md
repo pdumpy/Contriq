@@ -21,6 +21,7 @@ Updated 23 November 2026 for the local V1 implementation. The user authorized im
 | Loopback-only native PostgreSQL with reader and owner connections | Reuses the installed toolchain. Web reads cannot mutate data. Local trust authentication is confined to the development cluster. |
 | Small bounded snapshot filtering for 200 employees | Keeps historical identity/role consistent. Indexed SQL search over persistent snapshots is the larger-scale alternative. |
 | Local fonts, restrained dark UI and progressive evidence disclosure | Applies the WARCAMP visual language and makes detailed calculations available at the point of review. |
+| Gold C/Q product mark | The selected monogram frames a chart that recalls Contriq's role-specific calculations. |
 
 ## Provisional measurement contract
 

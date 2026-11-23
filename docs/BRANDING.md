@@ -16,10 +16,10 @@ People cards and employee records use [Cue’s review images](https://github.com
 
 ## Product mark
 
-The original generated symbol combines an open geometric C, three evidence strokes and a verification check. It represents original work records becoming a validated and traceable result. Its muted gold and charcoal follow the existing product palette.
+The selected product mark combines a rounded C with a diagonal Q tail and a three-bar chart. It uses champagne gold and antique gold on charcoal.
 
-- App asset is `public/brand/contriq-mark.png`, a 256px PNG.
-- The selected full-resolution generated source is retained locally at `.local/brand/contriq-mark-generated-original.png`.
+- App asset is `public/brand/contriq-mark.png`, a 160px PNG.
+- The selected full-resolution generated source is retained locally at `.local/brand/contriq-cq-mark-generated.png`.
 - The built-in ImageGen tool generated the mark. The selected output was inspected and downsampled for the interface.
 - The charcoal ground blends into the dark sidebar with the mark's CSS blend treatment.
 
@@ -34,6 +34,6 @@ The supplied examples use one corporate mark across OSWAR/teck products. The sam
 The following exact prompt produced the selected product mark with the built-in ImageGen tool.
 
 ```text
-Use case: logo-brand. Design ONE original flat geometric product logo symbol only for CONTRIQ, an evidence-to-verification software app. A compact open letter-C silhouette containing three aligned horizontal evidence bars that converge into a precise verification check. Reduce it to a bold simple balanced symbol that remains clear at 32 pixels. Use solid flat muted gold #d6bf83 ink against a perfectly solid uniform charcoal background #0b0d0c. Absolutely uniform fills, sharp geometric edges, vector-like finish. The symbol should occupy about 85% of a square canvas with modest even padding. No text, wordmark, letters outside the symbol, tiny details, gradients, lighting effects, grain, shadows, glows, frames, presentation boards, mockups or watermark. Do not introduce any additional colors.
+Recolor and isolate the main C/Q monogram in this image for the CONTRIQ app. Match the reference geometry closely: the same wide, rounded hexagonal C silhouette open at the right, the same diagonal lower-right Q tail, and the same chart inside it with three rising bars and three round nodes on the ascending line. Keep the alignment, weight, proportions, and gaps from the reference. Recolor the navy C and trend line to Contriq's muted champagne gold #d6bf83, and the teal bars and Q tail to warm antique gold #b09150. Use uniform charcoal #0b0d0c for the background. Remove the Edit button and any neighboring graphic from the screenshot. Output exactly one tightly spaced, optically centered logo on a square canvas with about 8% padding. Crisp clean edges and flat solid fills. No lettering, blue or teal, sheen, bevels, texture, shadow, or embellishment.
 ```
 
