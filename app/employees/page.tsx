@@ -18,6 +18,7 @@ import {
   type SearchValues,
 } from "@/components/ui";
 import { DirectoryFilters } from "@/components/directory-filters";
+import { EmployeeAvatar } from "@/components/employee-avatar";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "People" };
 export default async function People({
@@ -45,7 +46,6 @@ export default async function People({
     family,
     status,
     page,
-    pageSize: 15,
     runId: requestedRun,
   });
   if (requestedRun && !data.runId) notFound();
@@ -63,7 +63,7 @@ export default async function People({
     <>
       <PageHeading
         title="People"
-        description="Search the fictional cohort and inspect each person’s score and evidence."
+        description="Search the fictional cohort and inspect each person’s score and evidence. Profile images are illustrative."
       />
       <DirectoryFilters
         key={`${q}:${family}:${status}`}
@@ -105,13 +105,7 @@ export default async function People({
                         className="person-name"
                         href={withRun(`/employees/${person.code}`, data.runId)}
                       >
-                        <span className="avatar" aria-hidden="true">
-                          {person.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .slice(0, 2)
-                            .join("")}
-                        </span>
+                        <EmployeeAvatar code={person.code} status={person.status} />
                         <span>
                           {person.name}
                           <span className="person-code mono">

@@ -14,7 +14,7 @@ test("directory query supports a role, result state, name and historical run", (
       family: "data_science",
       status: "insufficient_evidence",
       page: 2,
-      pageSize: 20,
+      pageSize: 25,
       runId: "12",
     },
   );

@@ -8,6 +8,12 @@ The product name is displayed as CONTRIQ. The N has the pointed open-apex form u
 
 The wordmark uses locally packaged Inter Bold at weight 700. A CSS pseudo-element in `app/globals.css` gives the N its custom shape. `src/components/navigation.tsx` renders the wordmark and product mark. Interface headings, navigation, labels and body copy use Inter with sentence-case labels. Scores, identifiers, dates and formulas use IBM Plex Mono.
 
+The footer uses Geist with the bundled [SIL Open Font License](../public/fonts/geist-OFL.txt). The curtain samples a Times New Roman CONTRIQ mask and uses the same custom N outline. Its fixed reveal, 3 px cells on a 4 px grid, and traveling Simplex field follow the [WoiseX100 curtain](https://github.com/dumpydon/WoiseX100/blob/main/src/curtain-motion.js). Active cells use Contriq gold. Reduced motion shows a still frame.
+
+The full-width bar immediately above the curtain carries the OSWAR/teck credit, copyright and legal controls. The controls show demo notices. Final legal text is pending owner review.
+
+People cards and employee records use [Cue’s review images](https://github.com/dumpydon/cue/tree/3b1b1f1e1bd63b7cef6312a93e05ccdbad3c753c/site/public/assets/story-avatars) as illustrations for fictional profiles. The 11 published PNGs rotate deterministically by employee code. Records with insufficient evidence use Cue’s Remi Zee illustration (`alex-rivera.svg`).
+
 ## Product mark
 
 The original generated symbol combines an open geometric C, three evidence strokes and a verification check. It represents original work records becoming a validated and traceable result. Its muted gold and charcoal follow the existing product palette.

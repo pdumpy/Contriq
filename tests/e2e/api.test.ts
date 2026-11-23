@@ -26,7 +26,7 @@ test("public overview, search, role filter and pagination use the published data
     "/api/employees?family=backend_engineering",
   );
   assert.equal(directory.total, 50);
-  assert.equal(directory.employees.length, 20);
+  assert.equal(directory.employees.length, 25);
   assert.ok(
     directory.employees.every(
       (employee) => employee.jobFamily === "backend_engineering",

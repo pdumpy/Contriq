@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowDown, Check, FileCheck2, Fingerprint, Scale } from "lucide-react";
 import { getMethodology } from "@/server/queries";
 import { FAMILY_LABELS, JOB_FAMILIES, type DimensionKey } from "@/types";
+import { RubricWeight } from "@/components/rubric-weight";
 import {
   InfoNote,
   PageHeading,
@@ -100,17 +101,20 @@ export default async function Methodology({
             <span className="equation-denominator">100</span>
           </span>
         </div>
-        <dl className="equation-key">
+        <ul className="equation-key" aria-label="Rubric weight breakdown">
           {rubric.dimensions.map((dimension) => (
-            <div key={dimension.key}>
-              <dt>
-                <var>{notation[dimension.key].symbol}</var>
-                <span>{notation[dimension.key].label}</span>
-              </dt>
-              <dd>{dimension.weight}%</dd>
-            </div>
+            <RubricWeight
+              key={`${rubric.id}:${dimension.key}`}
+              {...notation[dimension.key]}
+              weight={dimension.weight}
+              metrics={dimension.metrics.map(({ key, label, weight }) => ({
+                key,
+                label,
+                weight,
+              }))}
+            />
           ))}
-        </dl>
+        </ul>
         <p className="equation-scale">
           Each dimension is scored from 0 to 100.
         </p>

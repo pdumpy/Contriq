@@ -7,7 +7,7 @@ Updated 23 November 2026 after the complete local V1 build.
 | MacBook Air M2 workspace | `/Users/piyushagarwal/LEETCODE/OSWARwork/Contriq` |
 | Office MacBook Neo historical path | `/Users/osmgx/Music/LC/Contriq` |
 | Repository | `pdumpy/Contriq`, branch main |
-| Repository HEAD | Original documentation commit 2e889d0. All implementation changes are local and uncommitted. |
+| Repository history | The V1 build landed in `94c31cc`. The follow-up on `main` includes the profile images, footer, rubric breakdown and 25-person pagination. |
 | Local preview | http://127.0.0.1:3000, development server running |
 | PostgreSQL | Private local PostgreSQL 17 cluster in `.local/postgres`, loopback port 55438, reader and owner roles |
 | Dataset | 200 fictional mid-level employees, 50 per family, seed 42 |
@@ -18,7 +18,7 @@ Updated 23 November 2026 after the complete local V1 build.
 | UI | Overview, searchable/filterable/paginated People, detailed calculation/evidence, methodology role views |
 | Checks | Typecheck, zero-warning lint, 32 unit/integration + 5 HTTP tests, production build and production HTTP smoke passed |
 | Documentation | Six engineering documents updated, detailed scoring contract, 12 study guides |
-| Publishing | No commits, pushes, PRs or deployment in this build session |
+| Hosting | Local Next.js and PostgreSQL. Cloudflare deployment is pending. |
 
 ## Review the local result
 
@@ -32,14 +32,20 @@ The full implementation prompt confirmed the fixed 90-day mid-level cohort and a
 
 ## Later work
 
-The next action is the owner's local application and study-material review. GitHub publishing and Cloudflare deployment require the separate authorization requested in the build prompt. A hosting pass must select/verify the adapter and managed PostgreSQL provider, replace local trust/network assumptions, connect request-scoped database access, test the Worker runtime and establish backups.
+The next action is the owner's application and study-material review. A separately authorized hosting pass must select and verify the adapter and managed PostgreSQL provider, replace local trust and network assumptions, connect request-scoped database access, test the Worker runtime and establish backups.
 
 V2/V3 scope, real accounts, external uploads and RAG remain later product decisions. Prior development runs retain their stored components and source references. Replay rejects unsupported engine versions.
 
 ## Switching Macs
 
-This build has not been published to GitHub. Review and authorize publication before expecting these local changes on the office Mac. Once published, inspect the other checkout's working tree and pull with fast-forward only. Preserve local work and use the selected branch. The original brief is retained in the local ignored context archive and personal knowledge vault.
+To resume on the other Mac, inspect its working tree and pull `main` from GitHub with fast-forward only. Preserve local work. The original brief is retained in the local ignored context archive and personal knowledge vault.
 
 ## Latest UI review
+
+The People directory and individual records now share locally bundled Cue portraits. The selected run's result status determines when to show the Remi Zee illustration. The directory and API both show 25 employees per page.
+
+The office Mac's local checkout adds a gold CONTRIQ footer curtain on `main`. The custom N stays in the wordmark, and the canvas uses the WoiseX100 motion settings. Review the reveal at the bottom of a page in the local preview.
+
+On the office Mac, the Methodology weight rows now show each metric's share and maximum overall points on hover or activation. The display uses the selected rubric's stored weights.
 
 On 23 November, all-caps interface labels were replaced with sentence case and wide positive tracking was removed. Inter is used for interface copy, including the formerly monospace labels. Technical values keep IBM Plex Mono. Type checking, lint and rendered desktop/390px checks passed after the change.

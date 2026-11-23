@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { JOB_FAMILIES, type DirectoryParams } from "./types";
+import { JOB_FAMILIES, PEOPLE_PAGE_SIZE, type DirectoryParams } from "./types";
 
 const directorySchema = z.object({
   q: z.string().trim().max(100).optional(),
@@ -25,7 +25,7 @@ export function parseDirectoryParams(search: URLSearchParams): DirectoryParams {
     family: parsed.family,
     status: parsed.status,
     page: parsed.page,
-    pageSize: 20,
+    pageSize: PEOPLE_PAGE_SIZE,
     runId: parsed.run,
   };
 }

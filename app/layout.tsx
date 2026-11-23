@@ -6,8 +6,11 @@ import "@fontsource/inter/700.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
+import { FooterBar } from "@/components/footer-bar";
+import { FooterCurtain } from "@/components/footer-curtain";
 import { WorkspaceShell } from "@/components/workspace-shell";
 import { PERIOD } from "@/types";
+import { Calendar } from "lucide-react";
 export const metadata: Metadata = {
   title: { default: "CONTRIQ — Evaluation overview", template: "%s · CONTRIQ" },
   description:
@@ -30,20 +33,23 @@ export default function RootLayout({
                 Evidence evaluation<span className="topbar-separator">/</span>
                 <span className="muted">Mid-level cohort</span>
               </div>
-              <div className="period">
-                <span className="period-label">Evaluation window</span>
-                <span className="mono">{PERIOD.label}</span>
+              <div
+                className="period"
+                title={`Evaluation window: ${PERIOD.start} to ${PERIOD.end} (90 days, UTC)`}
+              >
+                <div className="period-badge">
+                  <Calendar size={13} className="period-calendar-icon" aria-hidden="true" />
+                  <span className="period-label">Evaluation window</span>
+                </div>
+                <span className="period-dates mono">{PERIOD.label}</span>
                 <span className="window-tag">90 days</span>
               </div>
             </div>
             <main id="main-content">{children}</main>
-            <footer className="footer">
-              <span>
-                Synthetic data · Demonstration rubrics · Advisory results
-              </span>
-            </footer>
           </div>
+          <FooterBar />
         </WorkspaceShell>
+        <FooterCurtain />
       </body>
     </html>
   );

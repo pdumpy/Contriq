@@ -1,3 +1,5 @@
+export const PEOPLE_PAGE_SIZE = 25;
+
 export const JOB_FAMILIES = [
   "data_science",
   "backend_engineering",

@@ -2,6 +2,7 @@ import { getPool } from "./db";
 import type { RunRow } from "./model";
 import {
   JOB_FAMILIES,
+  PEOPLE_PAGE_SIZE,
   PERIOD,
   type DirectoryData,
   type DirectoryParams,
@@ -77,7 +78,7 @@ export async function getEmployees(
   employees.sort((a, b) => a.code.localeCompare(b.code));
   const pageSize = Math.max(
     1,
-    Math.min(100, Math.floor(params.pageSize ?? 20)),
+    Math.min(100, Math.floor(params.pageSize ?? PEOPLE_PAGE_SIZE)),
   );
   const page = Math.max(1, Math.floor(params.page ?? 1));
   return {

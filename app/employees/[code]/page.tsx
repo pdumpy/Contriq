@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ArrowDown, Check, Database, FileText, Layers3 } from "lucide-react";
 import { getEmployee } from "@/server/queries";
 import { FactLink } from "@/components/fact-link";
+import { EmployeeAvatar } from "@/components/employee-avatar";
 import {
   FAMILY_LABELS,
   type EvidenceView,
@@ -226,14 +227,17 @@ export default async function PersonDetail({
     <>
       <Breadcrumb>{employee.code}</Breadcrumb>
       <header className="person-heading">
-        <div>
-          <div className="eyebrow">Individual evidence record</div>
-          <h1>{employee.name}</h1>
-          <div className="person-context">
-            <span className="mono">{employee.code}</span>
-            <span>{FAMILY_LABELS[employee.jobFamily]}</span>
-            <span>{employee.team}</span>
-            <span>Mid-level</span>
+        <div className="person-identity">
+          <EmployeeAvatar code={employee.code} status={result.status} size={56} />
+          <div>
+            <div className="eyebrow">Individual evidence record</div>
+            <h1>{employee.name}</h1>
+            <div className="person-context">
+              <span className="mono">{employee.code}</span>
+              <span>{FAMILY_LABELS[employee.jobFamily]}</span>
+              <span>{employee.team}</span>
+              <span>Mid-level</span>
+            </div>
           </div>
         </div>
         <Status status={result.status} />

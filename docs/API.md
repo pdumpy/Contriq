@@ -5,7 +5,7 @@ The web API exposes GET operations for the synthetic published dataset. It share
 | Endpoint | Parameters | Response |
 | --- | --- | --- |
 | `GET /api/overview` | None | Counts, per-family distributions, coverage, evidence counts, period and selected run ID |
-| `GET /api/employees` | `q`, `family`, `status`, `page`, `run` | Employee rows, matching total, page, pageSize 20, run ID and period |
+| `GET /api/employees` | `q`, `family`, `status`, `page`, `run` | Employee rows, matching total, page, pageSize 25, run ID and period |
 | `GET /api/employees/{code}` | Optional `run` | Identity, exact rubric, stored result/components, source coverage and original records/facts |
 | `GET /api/methodology` | None | Active four role rubrics from PostgreSQL and evaluation period |
 | `GET /api/health` | None | `status` of a bounded database readiness query |

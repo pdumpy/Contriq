@@ -21,7 +21,9 @@ The web app uses a read-only PostgreSQL role. Trusted CLI scripts use the separa
 - **Overview** shows cohort counts, per-family score distributions and source coverage.
 - **People** searches names, codes and teams, filters by family/result status, and paginates a pinned published run.
 - **Employee detail** shows six dimensions, metric ratios, weighted contributions, source availability and expandable raw evidence.
-- **Methodology** reads the active rubric definitions from PostgreSQL and explains the exact demonstration rules.
+- **Methodology** explains the active rubric. Hover over or activate a dimension weight to see each metric's share and its maximum contribution to the overall score.
+
+Scroll past the page footer to reveal the animated gold CONTRIQ wordmark.
 
 Start with employee `CQ-004`, Isha Mehta. Her Data Science result is **43.88** with 100% source coverage. Employee `CQ-001` demonstrates insufficient evidence. Missing information produces a null total rather than an invented zero. Results are a synthetic demonstration and have no validated employment-decision meaning.
 
