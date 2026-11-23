@@ -1,34 +1,33 @@
 # Decisions
 
-Confirmed items come from the project brief. Proposed items describe this design for review. Pending items need a decision before the related behavior is implemented.
+Updated 23 November 2026 for the local V1 implementation. The user authorized implementation and sensible provisional scoring rules in the full development prompt. These demonstration choices make the synthetic application operational and remain open to later product review.
 
-## Confirmed
+## Implemented V1 decisions
 
-| Decision | Reason | Alternatives considered | Trade-off |
-| --- | --- | --- | --- |
-| Use 200 fictional mid-level employees, four equal job families and one 90-day window. | Gives the demo a consistent scope. | Real employee data or a mix of job levels. | The results describe only the synthetic cohort. |
-| Use six dimensions and one pure engine with versioned role rubrics. Reserve 2% for verified collaboration. | Keeps different types of work comparable within each family and results reproducible. | A shared rubric or separate engines per family. | Rubrics need their own validation and fixtures. |
-| Keep evidence history, explicit missing-data states and explainable advisory scores. | A reviewer must be able to reproduce a result and inspect its limitations. | Store only the current score or fill missing inputs with zero. | Historical data and provenance take more storage. |
-| Use Next.js and TypeScript, a Workers-compatible API and managed PostgreSQL with JSONB. | Gives V1 a modular web stack and relational audit trail with room for varied evidence. | A document store, or encoding each source's raw format in relational columns. | PostgreSQL connectivity and framework compatibility must be verified in the intended runtime. |
-| Use WARCAMP's dark-first, progressively disclosed UI. | Makes methodology and uncertainty visible while keeping core screens easy to scan. | Put the full audit detail on the overview. | Detailed evidence takes an extra interaction. |
+| Choice | Reason and trade-off |
+| --- | --- |
+| 200 fictional mid-level employees, 50 in each technical job family | The implementation prompt explicitly confirms this cohort and resolves the earlier mid-level status disagreement. |
+| Fixed UTC half-open period 2026-08-23 through 2026-11-21 | Exactly 90 days. The UI displays the inclusive dates 23 Aug–20 Nov. A fixed window simplifies reproducibility. |
+| PostgreSQL 17 with nine domain tables and JSONB for flexible fields | Relational constraints protect identities/history. JSONB retains heterogeneous evidence and versioned rules without replacing the relationships. |
+| Next.js App Router with TypeScript and pg | One understandable full-stack codebase. Server pages and HTTP routes share the same PostgreSQL read module. |
+| One pure scoring engine, four versioned role rubrics | Roles use different work-check definitions and dimension percentages without duplicating the engine. |
+| Two binary metrics per main dimension, one collaboration metric | An explicit observed pass/fail checklist gives inspectable numerator/denominator arithmetic. It loses some real-world nuance and has no empirical validation. |
+| Supplied demonstration weight sets and collaboration 2% | Implemented as provisional V1 configuration. Each role totals exactly 100%. These weights require calibration for any future purpose. |
+| All required metrics need complete source coverage and a nonzero denominator | Withholds a total when a dimension is unavailable. It avoids redistribution of missing weights but is deliberately conservative. |
+| Canonical work/metric keys and latest source revisions | Equivalent mirrors count once, conflicting duplicates withhold the metric and source corrections preserve old runs. |
+| Exact integer fractions, half-up two-decimal presentation | Avoids floating-point accumulation and records an explainable rounding policy. Total calculation uses unrounded dimensions. |
+| Source coverage is independent of score weights | Availability of the six required source inventories is distinct from performance and eligibility. |
+| Atomic full-cohort publication with immutable inputs and database guards | A failed publication preserves the previous complete published run. It adds validation work to the trusted runner. |
+| Loopback-only native PostgreSQL with reader and owner connections | Reuses the installed toolchain. Web reads cannot mutate data. Local trust authentication is confined to the development cluster. |
+| Small bounded snapshot filtering for 200 employees | Keeps historical identity/role consistent. Indexed SQL search over persistent snapshots is the larger-scale alternative. |
+| Local fonts, restrained dark UI and progressive evidence disclosure | Applies the WARCAMP visual language and makes detailed calculations available at the point of review. |
 
-## Proposed
+## Provisional measurement contract
 
-| Decision | Reason | Alternatives considered | Trade-off |
-| --- | --- | --- | --- |
-| Start from the [four weight sets](PROJECT_CONTEXT.md#scoring) in the brief. | Establishes an initial distribution for each role. | Equal dimension weights or a uniform distribution across roles. | The proposed differences need review alongside real rubric definitions. |
-| Use the [nine-table schema](SCHEMA_DESIGN.md) with typed facts, immutable input revisions and exact rubric references. | Keeps ingest, validation and source corrections traceable. | Overwrite source records in place, or store the full model in JSONB. | Importers and the publisher must validate identities and references across rows. |
-| Snapshot one full cohort per run and publish atomically. Use explicit UTC, half-open windows. | Keeps the directory, breakdowns and dashboard on one coherent result set. | Publish scores as individual employees finish. | A failed calculation blocks the new cohort. An explicit insufficient-evidence result counts as a completed outcome. |
-| Prefer a small Workers deployment with a read-only web API and a trusted seed/scoring runner. Evaluate Hyperdrive for PostgreSQL. | Keeps database credentials and write operations out of the public UI. | Split the UI and API into independently deployed services, or use a provider-managed connection pool. | Runtime and transaction support need a local proof before choosing an adapter or driver. |
+See [SCORING_CONTRACT.md](SCORING_CONTRACT.md) for every actual role-specific metric, source, formula, eligibility rule and missing-data behavior. A low result describes the observed checklist ratios. The application produces no personality, popularity or employment recommendation.
 
-## Pending decisions
+## Later decisions
 
-| Decision needed | Why it matters | Options and trade-off |
-| --- | --- | --- |
-| Role submetrics, measurement definitions, role expectations and normalization formulas | Defines what contributes to each dimension. | Ratios, rubrics with discrete bands and other measurement-specific functions have different data needs. Review definitions per role first. |
-| Required evidence sources, thresholds, eligibility and handling of incomplete coverage or a zero denominator | Determines when a numeric score is justified. | Per-metric and per-dimension requirements differ in how much of a partial record they can explain. Agree when to report insufficient evidence. |
-| Canonical identity and attribution rules by source and fact type | Prevents cross-source duplicates and resolves conflicting records. | Shared work IDs work where they exist. Source-specific mappings need explicit rules and tests. |
-| Decimal precision, rounding and display scale | Keeps replay and presentation consistent. | Fixed-scale quantities and decimal arithmetic have different storage and implementation costs. Choose points at which rounding is allowed. |
-| Window anchor, publication cadence and within-family ranking | Determines what runs the user sees and which comparisons the product makes. | A fixed demo period is simpler than rolling windows. Score distributions and ordered lists answer different questions. |
-| PostgreSQL provider and version, driver, Next.js adapter and deployment layout | Affects transaction support, local parity and operating effort. | Check a Workers-compatible setup before committing to packages or a provider. |
-| API routes, response versioning, search and pagination details | Determines the public contract. | A small fixed cohort can start with simple reads. Add pagination if the directory contract requires it. |
+The managed PostgreSQL provider, Cloudflare adapter, request-scoped Hyperdrive wiring, production authentication/network boundaries, backups and deployment verification remain later hosting work. Cloudflare currently recommends beta vinext for Next.js APIs. A managed runtime needs compatibility testing before adoption. [Cloudflare framework guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/)
+
+V2/V3 features, real employee data, external imports, RAG, authentication and rankings require their own scoped product decisions. Existing synthetic scores cannot establish a scientifically validated HR rubric.

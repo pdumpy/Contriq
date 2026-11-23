@@ -1,24 +1,62 @@
 # Contriq
 
-Contriq is an evidence-based performance scoring demo for 200 fictional, mid-level employees. It evaluates four job families over the same 90-day window and shows the work, rubric and calculations behind each result.
+Contriq turns fictional work evidence into role-specific calculations that a reviewer can inspect. It includes 200 mid-level employees across four job families, a real PostgreSQL database, versioned rubrics, a pure TypeScript scoring engine and four working review screens.
 
-```mermaid
-flowchart LR
-    Evidence["Synthetic work evidence"] --> Verified["Validated facts"]
-    Verified --> Score["Score from the employee's role rubric"]
-    Score --> Explain["Breakdown and supporting evidence"]
+## Run on this Mac
+
+Requirements are Node.js 22 or newer, npm and PostgreSQL 17 command-line tools on PATH. All data is fictional. The local database binds to loopback on port 55438.
+
+```sh
+npm ci
+npm run setup
+npm run dev
 ```
 
-The project is at the documentation review stage. The planned stack is Next.js and TypeScript, a Cloudflare Workers-compatible API, and managed PostgreSQL.
+Open [Contriq locally](http://127.0.0.1:3000). Setup creates an isolated cluster inside `.local/postgres`, applies checksum-tracked migrations, imports reproducible seed 42 and publishes a complete scoring run. Rerunning setup preserves evidence and historical results. It publishes a new run instead of overwriting the previous one.
 
-| Document | What it covers |
+The web app uses a read-only PostgreSQL role. Trusted CLI scripts use the separate owner connection. `.env.local` and the cluster are ignored by Git. `.env.example` describes the local connection variables. This loopback-only setup uses local trust authentication and is intended for the synthetic development environment.
+
+## Inspect the product
+
+- **Overview** shows cohort counts, per-family score distributions and source coverage.
+- **People** searches names, codes and teams, filters by family/result status, and paginates a pinned published run.
+- **Employee detail** shows six dimensions, metric ratios, weighted contributions, source availability and expandable raw evidence.
+- **Methodology** reads the active rubric definitions from PostgreSQL and explains the exact demonstration rules.
+
+Start with employee `CQ-004`, Isha Mehta. Her Data Science result is **43.88** with 100% source coverage. Employee `CQ-001` demonstrates insufficient evidence. Missing information produces a null total rather than an invented zero. Results are a synthetic demonstration and have no validated employment-decision meaning.
+
+## Verify
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run test:e2e
+npm run build
+```
+
+`npm test` covers the pure engine, query validation and actual PostgreSQL integration. Run setup first. `test:e2e` needs the local server and tests the real HTTP endpoints. Its default URL is port 3000 and can be overridden through `TEST_BASE_URL`. Browser interaction and responsive QA are described in the [verification record](docs/VERIFICATION.md).
+
+To refresh the evidence or calculation independently, use `npm run db:seed` and `npm run db:score`. `npm run db:migrate` applies pending migrations. Source imports reject conflicting replays.
+
+To stop the development server, press Ctrl+C in its terminal. To stop the owned database, run `pg_ctl -D .local/postgres stop`. `npm run setup` starts it again. `npm run start` serves a previously built production bundle on port 3000.
+
+## Learn and review
+
+Start with [study/START_HERE.md](study/START_HERE.md). It gives a 2–3-hour route through the working app and its actual source files.
+
+| Reference | Contents |
 | --- | --- |
-| [AGENTS.md](AGENTS.md) | Instructions for future Codex sessions |
-| [Project Context](docs/PROJECT_CONTEXT.md) | V1 scope, scoring principles and UX |
-| [Decisions](docs/DECISIONS.md) | Agreed direction, proposals and open questions |
-| [Handoff](docs/HANDOFF.md) | Workspace status and the next step |
-| [System Architecture](docs/SYSTEM_ARCHITECTURE.md) | System boundaries and responsibilities |
-| [Technical Architecture](docs/TECHNICAL_ARCHITECTURE.md) | Runtime, database access and test plan |
-| [Flow](docs/FLOW.md) | Evidence ingestion, calculation, publication and reading |
-| [API](docs/API.md) | Proposed read operations, response fields and states |
-| [Schema Design](docs/SCHEMA_DESIGN.md) | ER diagram, table definitions and history protections |
+| [Project context](docs/PROJECT_CONTEXT.md) | Purpose, scope and WARCAMP expectations |
+| [Decisions](docs/DECISIONS.md) | Implemented choices, demonstration assumptions and future choices |
+| [System architecture](docs/SYSTEM_ARCHITECTURE.md) | Components and responsibility boundaries |
+| [Technical architecture](docs/TECHNICAL_ARCHITECTURE.md) | Runtime, dependencies, database access and hosting considerations |
+| [Flow](docs/FLOW.md) | Import, snapshot, scoring, atomic publication and reads |
+| [API](docs/API.md) | Implemented read endpoints and errors |
+| [Schema](docs/SCHEMA_DESIGN.md) | Tables, constraints and historical references |
+| [Scoring contract](docs/SCORING_CONTRACT.md) | Provisional role-specific measurements and exact mathematics |
+| [Handoff](docs/HANDOFF.md) | Current local state and review entry points |
+
+## Later hosting
+
+This delivery runs on local Next.js. Cloudflare is the intended later host. The adapter, managed PostgreSQL provider and request-scoped Hyperdrive connection wiring need a separate deployment pass. See the [technical architecture](docs/TECHNICAL_ARCHITECTURE.md). V1 has no public write API, employee authentication, external uploads, RAG or LLM scoring.

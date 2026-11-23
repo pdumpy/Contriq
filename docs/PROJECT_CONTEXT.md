@@ -32,13 +32,13 @@ The rubric defines how a role's work maps to the six dimensions. The engine take
 | Verified Collaboration | 2% | 2% | 2% | 2% |
 | **Total** | **100%** | **100%** | **100%** | **100%** |
 
-These are proposed weights. Verified collaboration carries 2% and requires work evidence. For a numeric result, each dimension is scored from 0 to 100 and the overall score is `SUM(dimension_score × weight_percent) / 100`.
+These are provisional V1 demonstration weights, implemented under the full-build authorization. Verified collaboration carries 2% and requires work evidence. For a numeric result, each dimension is scored from 0 to 100 and the overall score is `SUM(dimension_score × weight_percent) / 100`.
 
 - Measure accepted work and verified outcomes. Keep popularity, personality and subjective peer opinions outside the rubric.
 - Count each underlying measurement once per calculation. Ignore unrelated records and explain relevant exclusions where possible.
 - Track evidence availability separately from outcomes. Distinguish missing data from an observed zero and surface insufficient evidence explicitly.
 - Pin every result to its rubric version and input revisions. A repeat with the same engine and inputs must produce the same calculation.
-- Submetrics, measurement definitions, normalization, source and evidence thresholds, and eligibility remain open. See [Decisions](DECISIONS.md#pending-decisions).
+- The provisional checklist submetrics, exact arithmetic, source-completeness requirement and eligibility rules are implemented in [the scoring contract](SCORING_CONTRACT.md). Later product calibration remains open.
 
 ## Experience
 

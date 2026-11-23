@@ -1,30 +1,42 @@
 # Flow
 
-V1 design draft
+## Source observations to a published result
 
 ```mermaid
 sequenceDiagram
-    participant I as Synthetic importer
+    participant F as Seeded source fixture
+    participant I as Importer
     participant D as PostgreSQL
     participant R as Scoring runner
-    participant E as Scoring engine
-    participant A as Read API
-    I->>D: Write evidence revisions, facts and coverage
-    R->>D: Capture cohort and exact inputs
-    R->>E: Evaluate the four rubrics for the cohort
-    E-->>R: Return outcomes, breakdowns and evidence links
-    alt Complete cohort passes checks
-        R->>D: Commit results and publish the run together
-    else Calculation or write fails
-        R->>D: Record the failure after rollback when possible
+    participant E as Pure scoring engine
+    participant U as Reviewer
+    F->>I: Employee identities + raw work checklists
+    I->>I: Validate and normalize explicit observations
+    I->>D: Append evidence revisions, facts and source coverage
+    R->>D: Capture full cohort + exact input IDs
+    D-->>R: Running attempt with immutable manifest
+    R->>E: Each employee + exact rubric + facts + coverage
+    E-->>R: Six dimension outcomes + ratios + exclusions
+    R->>D: Lock attempt and validate whole-cohort results
+    alt All rows and guards succeed
+        R->>D: Commit 200 outcomes + links and publish together
+    else Calculation or insertion fails
+        R->>D: Rollback result writes, mark attempt failed separately
     end
-    A->>D: Read a published run and pin its ID
-    D-->>A: Return the stored result and evidence state
+    U->>D: Through server read queries, select published run
+    D-->>U: Stored result, period, rubric and source references
 ```
 
-- Imports resolve employee codes and source identities before recording evidence. Invalid records with identifiable subjects can be kept with a reason. Repeat imports return the existing revision.
-- The engine uses the job family from the captured cohort to choose the assigned rubric. A coverage gap is distinct from a complete source with zero activity.
-- The UI starts with the result and period, then reveals dimension calculations, weights, coverage and evidence. It offers evidence-specific next steps, such as checking an unavailable source.
-- The reader distinguishes a numeric zero, a published insufficient-evidence outcome, a window with no published run, and a service error. A failed run leaves the last published result available.
+1. `generateDataset(42)` generates 50 fictional employees per role, raw source checklists, intentional duplicates/invalid records and source coverage observations. It contains no final scores.
+2. `normalizeEvidence()` extracts explicit binary metric facts. Deadline checks account for approved changes recorded before the original deadline. Invalid/ineligible observations retain reasons.
+3. `seedDatabase()` and `ingestEvidence()` store one immutable revision at a time. Replays with equivalent content succeed without appending duplicates. Conflicting replays fail. Corrections identify the previous revision.
+4. `captureRun()` resolves latest source revisions before subject filtering, then captures 200 employees, four active rubrics and exact input references. This prevents a correction or reattribution from leaving a superseded fact active.
+5. `calculateRun()` checks the engine version and calls `scoreEmployee()` on each employee's pinned inputs. Coverage, eligibility, canonical duplicate resolution and complete dimension requirements determine whether a numeric total is available.
+6. `publishRun()` recomputes and validates supplied results, then inserts scores, six dimension rows, metric rows and evidence links inside one transaction. It changes the attempt to published only when database guards approve the complete manifest.
+7. `getOverview()`, `getEmployees()` and `getEmployee()` read the selected published run. Detail links keep the run ID so newly published data cannot silently alter that view.
 
-See [failure handling](SCHEMA_DESIGN.md#failure-handling) for database behavior.
+## Reviewer flow
+
+Overview → select a job family → search/filter people → open a person → inspect dimensions → expand metric arithmetic → inspect source records → read methodology. Query parameters preserve search, filters, pagination and run selection when moving back to the directory.
+
+An insufficient-evidence result displays a null total, available dimensions and the missing source/metric reason. An observed false check contributes zero to its numerator while remaining in its denominator. An empty directory search shows an empty state. A PostgreSQL outage returns a service error and a retry affordance.

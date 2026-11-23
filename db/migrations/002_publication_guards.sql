@@ -1,0 +1,24 @@
+-- CHECK expressions must explicitly reject NULL explanations; SQL CHECK accepts NULL.
+ALTER TABLE evidence_records ADD CONSTRAINT record_reason_present CHECK(validation_status='valid' OR (validation_reason IS NOT NULL AND btrim(validation_reason)<>''));
+ALTER TABLE evidence_facts ADD CONSTRAINT fact_identity_and_reason CHECK((validation_status='valid' AND canonical_fact_key IS NOT NULL AND btrim(canonical_fact_key)<>'') OR (validation_status='invalid' AND validation_reason IS NOT NULL AND btrim(validation_reason)<>''));
+ALTER TABLE scoring_runs ADD CONSTRAINT failed_reason_present CHECK(status<>'failed' OR (failure_code IS NOT NULL AND btrim(failure_code)<>''));
+ALTER TABLE scores ADD CONSTRAINT insufficient_reason_present CHECK(status<>'insufficient_evidence' OR (reason_code IS NOT NULL AND btrim(reason_code)<>''));
+ALTER TABLE score_components ADD CONSTRAINT unavailable_reason_present CHECK(status<>'unavailable' OR (reason_code IS NOT NULL AND btrim(reason_code)<>''));
+ALTER TABLE score_evidence_links ADD CONSTRAINT exclusion_reason_present CHECK(usage<>'excluded' OR (exclusion_reason IS NOT NULL AND btrim(exclusion_reason)<>''));
+
+CREATE OR REPLACE FUNCTION guard_run_transition() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF TG_OP='DELETE' THEN RAISE EXCEPTION 'Run history is append-only'; END IF;
+ IF OLD.status<>'running' OR NEW.id<>OLD.id OR NEW.run_key<>OLD.run_key OR NEW.started_at<>OLD.started_at OR NEW.evaluation_start<>OLD.evaluation_start OR NEW.evaluation_end<>OLD.evaluation_end OR NEW.engine_version<>OLD.engine_version OR NEW.input_manifest<>OLD.input_manifest OR NEW.status='running' THEN RAISE EXCEPTION 'Invalid run transition'; END IF;
+ IF NEW.status='published' THEN
+  IF (SELECT count(*) FROM scores WHERE run_id=NEW.id)<>200 OR jsonb_array_length(NEW.input_manifest->'employees')<>200 THEN RAISE EXCEPTION 'Publication requires the complete 200 employee cohort'; END IF;
+  IF (SELECT count(DISTINCT item->'employee'->>'id') FROM jsonb_array_elements(NEW.input_manifest->'employees') item)<>200 THEN RAISE EXCEPTION 'Cohort identities must be unique'; END IF;
+  IF EXISTS(SELECT 1 FROM jsonb_array_elements(NEW.input_manifest->'employees') item LEFT JOIN scores s ON s.run_id=NEW.id AND s.employee_id=(item->'employee'->>'id')::uuid WHERE s.id IS NULL OR s.rubric_id<>(item->>'rubricId')::uuid OR s.job_family<>item->'employee'->>'jobFamily') THEN RAISE EXCEPTION 'Scores must match captured employee and rubric identities'; END IF;
+  IF EXISTS(SELECT 1 FROM scores s WHERE s.run_id=NEW.id AND (SELECT count(*) FROM score_components c WHERE c.score_id=s.id AND c.submetric IS NULL)<>6) THEN RAISE EXCEPTION 'Each outcome requires six dimension rows'; END IF;
+  IF EXISTS(SELECT 1 FROM scores s JOIN scoring_rubrics r ON r.id=s.rubric_id JOIN score_components c ON c.score_id=s.id WHERE s.run_id=NEW.id AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements(r.rules->'dimensions') d WHERE d->>'key'=c.dimension AND ((c.submetric IS NULL AND (d->>'weight')::numeric=c.weight_percent) OR (c.submetric IS NOT NULL AND EXISTS(SELECT 1 FROM jsonb_array_elements(d->'metrics') m WHERE m->>'key'=c.submetric AND (m->>'weight')::numeric=c.weight_percent))))) THEN RAISE EXCEPTION 'Components must match captured rubric dimensions and metrics'; END IF;
+  IF EXISTS(SELECT 1 FROM scores s JOIN scoring_rubrics r ON r.id=s.rubric_id CROSS JOIN LATERAL jsonb_array_elements(r.rules->'dimensions') d CROSS JOIN LATERAL jsonb_array_elements(d->'metrics') m WHERE s.run_id=NEW.id AND NOT EXISTS(SELECT 1 FROM score_components c WHERE c.score_id=s.id AND c.dimension=d->>'key' AND c.submetric=m->>'key')) THEN RAISE EXCEPTION 'Every rubric metric requires a calculation row'; END IF;
+  IF EXISTS(SELECT 1 FROM score_evidence_links l JOIN score_components c ON c.id=l.component_id JOIN scores s ON s.id=c.score_id JOIN evidence_facts f ON f.id=l.fact_id JOIN evidence_records e ON e.id=f.evidence_id WHERE s.run_id=NEW.id AND (e.employee_id<>s.employee_id OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(NEW.input_manifest->'employees') item WHERE item->'employee'->>'id'=s.employee_id::text AND item->'factIds' ? f.id::text) OR (l.usage='used' AND (f.validation_status<>'valid' OR e.validation_status<>'valid' OR f.observed_at<NEW.evaluation_start::timestamptz OR f.observed_at>=NEW.evaluation_end::timestamptz)))) THEN RAISE EXCEPTION 'Evidence links must belong to the employee snapshot and used evidence must be valid and within the window'; END IF;
+  IF EXISTS(SELECT 1 FROM score_evidence_links l JOIN score_components c ON c.id=l.component_id JOIN scores s ON s.id=c.score_id JOIN evidence_facts f ON f.id=l.fact_id WHERE s.run_id=NEW.id AND l.usage='used' GROUP BY l.component_id,f.fact_type,f.canonical_fact_key HAVING count(*)>1) THEN RAISE EXCEPTION 'A component cannot count a canonical measurement twice'; END IF;
+ END IF;
+ RETURN NEW;
+END $$;

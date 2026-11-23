@@ -1,6 +1,6 @@
 # PostgreSQL schema design
 
-Proposed V1 design for the synthetic cohort. The nine tables follow the path from a source record to an explainable, published result.
+Implemented local V1 schema for the synthetic cohort. The SQL migrations are the executable contract. The nine tables follow the path from a source record to an explainable, published result.
 
 ```mermaid
 erDiagram
@@ -22,7 +22,7 @@ Each dependent row belongs to one parent per required foreign key. An evidence r
 
 - Use UUID primary keys except for the generated bigint run ID and the composite link key. Required foreign keys restrict deletes. Unique constraints and primary keys supply their own indexes. Other indexes appear below.
 - Use `date` for calendar boundaries and `timestamptz` for instants. Use UTC midnight at each boundary of a half-open 90-day window. Check dates and timestamps are finite and ordered where applicable.
-- Use `numeric` for scores, weights and numeric operands. Reject non-finite numeric values. Keep scores and percentage weights within 0–100. Precision and rounding are [pending](DECISIONS.md#pending-decisions).
+- Use `numeric` for scores, weights and numeric operands. Reject non-finite numeric values. Keep scores and percentage weights within 0–100. The engine uses exact integer fractions with half-up rounding to two decimal places at display boundaries. See [the scoring contract](SCORING_CONTRACT.md).
 - Use checked text for closed sets such as statuses. The job family keys are `data_science`, `backend_engineering`, `full_stack_engineering` and `applied_agentic_ai`. The dimension keys are `delivery`, `quality`, `validation`, `reliability`, `maintainability` and `collaboration`.
 
 ## 1. employees
@@ -198,7 +198,7 @@ The rubric's version, family and rules become read-only on activation. Evidence 
 | Evidence is repeated | Source revision and fact uniqueness prevent repeat ingest. Reject conflicting replays. Use canonical keys to group duplicates across source IDs, and withhold conflicting measurements pending resolution. |
 | Data is invalid | Reject inputs without a resolvable identity. Preserve attributable, structurally valid JSON with an invalid status and reason when the content fails validation. Invalid inputs cannot contribute. |
 | Sources are incomplete | Retain exact coverage observations and unknown gaps. Use the approved eligibility rules for any numeric outcome. Missing evidence stays distinct from zero. |
-| Denominator is zero | Skip division and record why the component could not be computed. The consequence for eligibility remains a rubric decision. |
+| Denominator is zero | Skip division and record why the component could not be computed. A required unavailable metric withholds the overall total. |
 | Rubric belongs to another family | Reject the mismatch through the composite foreign key and the snapshot check. |
 | Run stops midway | Roll back the publish transaction. Record failure in a separate transaction if the attempt is still running. Public reads continue to use the last published result. |
 | Rubric changes | Activate a new version. Historical scores continue to reference the exact original rules. |
@@ -208,19 +208,34 @@ The rubric's version, family and rules become read-only on activation. Evidence 
 
 ## Example records
 
-Fictional Backend Engineer `BE-004`, Rin Vale, is mid-level on Queue Systems and joined on `2025-06-02`. The source record below references the employee's example UUID.
+The actual seeded Data Scientist `CQ-004`, Isha Mehta, is mid-level in Measurement Lab. Her delivery record below is one of the source observations behind the worked 43.88 result.
 
 ```json
 {
-  "employee_id": "6da35027-d9c2-498d-8223-33b7f47109b7",
-  "source": "synthetic/work-tracker",
-  "source_record_id": "work-184",
+  "id": "00000002-0000-4000-8000-00000000004e",
+  "employee_id": "0000000a-0000-4000-8000-000000000004",
+  "source": "demo:delivery",
+  "source_record_id": "CQ-004:78",
   "revision": 1,
-  "record_type": "work_item",
-  "observed_at": "2026-08-12T10:30:00Z",
-  "raw_payload": { "work_id": "work-184", "state": "accepted" },
+  "raw_payload": {
+    "title": "Demand forecast calibration",
+    "checks": {
+      "data_science.delivery.1": false,
+      "data_science.delivery.2": false
+    },
+    "workId": "CQ-004:work:1",
+    "eligible": true,
+    "reviewerReference": "review:CQ-004:1",
+    "acceptanceCriteria": "Agreed mid-level task scope; attributed owner verified in source."
+  },
   "validation_status": "valid"
 }
 ```
 
-An extracted fact could carry `fact_type = 'work_state'`, `value_text = 'accepted'` and the canonical key `'work-184:state'`. The example illustrates storage only. Its relevance, eligibility and score contribution depend on the approved Backend rubric.
+Its first normalized metric fact has ID `00000003-0000-4000-8000-0000000004e0`, fact type `data_science.delivery.1`, canonical work identity `CQ-004:work:1`, numeric observation `0` and denominator 1 in attributes. This observed check is one of four eligible work measurements. See [the full worked calculation](../study/SCORING_ENGINE_EXPLAINED.md).
+
+## Implemented migration and runner mapping
+
+`db/migrations/001_core.sql` creates the nine tables, indexes, revision guards and immutable-history triggers. `002_publication_guards.sql` strengthens required-reason and publication checks. `003_run_and_rubric_validation.sql` adds explicit NULL handling and strict run/rubric transition checks. `schema_migrations` is an additional infrastructure table used only for filenames, checksums and application timestamps.
+
+`src/server/ingest.ts` writes original revisions, normalized facts and coverage. `src/server/seed.ts` writes fictional people and initial rubrics. `src/server/scoring.ts` captures manifests and writes scores, dimension/metric components and evidence links. `src/server/queries.ts` projects stored snapshots through the read-only connection. See [Flow](FLOW.md) and [the database learning guide](../study/DATABASE_EXPLAINED.md).

@@ -1,32 +1,39 @@
 # Technical architecture
 
-V1 design draft
+## Local runtime
 
-```mermaid
-flowchart LR
-    Read["Next.js and Workers-compatible API"] --> Access["PostgreSQL data access"]
-    Write["Trusted TypeScript runner"] --> Access
-    Write --> Input["Versioned rubric, typed facts and coverage"]
-    Input --> Engine["Pure TypeScript scoring"]
-    Engine --> Output["Result, breakdown and evidence references"]
-    Output --> Write
-    Access --> Store[("Managed PostgreSQL")]
-```
+The implementation uses Next.js 16.4.6 App Router, React 19.3.1, TypeScript 6, PostgreSQL 17 and node-postgres. The package lock records exact installed versions. `next dev` serves the local review at port 3000. Server pages and route handlers use asynchronous parameters according to the installed Next.js documentation.
 
-| Area | Design |
+Use `src/types.ts` for shared DTOs and literal job-family/dimension keys. Domain code imports no Next.js, React or database modules. `src/server/` owns persistence. Client components contain navigation/filter state and never receive connection variables.
+
+| Package | Reason |
 | --- | --- |
-| Web runtime | Next.js and TypeScript. Verify the chosen adapter and required features in a local Workers runtime. Cloudflare's vinext option implements the Next.js API and is in beta. Its fit is open. [Cloudflare Next.js guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/) |
-| Database access | Use parameterized queries and a compatible driver. Hyperdrive is a candidate for Workers connection pooling. Keep each transaction on a single checked-out connection. The provider and driver are pending. [Hyperdrive pooling](https://developers.cloudflare.com/hyperdrive/concepts/connection-pooling/) |
-| Read consistency | Resolve a published run once per view and pin its ID. If using Hyperdrive, start with query caching off for current-run selection and transactions that capture inputs. [Hyperdrive query caching](https://developers.cloudflare.com/hyperdrive/concepts/query-caching/) |
-| Scoring | Pass versioned inputs, use a stable order and follow a documented decimal policy. Keep clocks, randomness, queries and network calls outside the engine. |
-| Local verification | Use PostgreSQL for integration tests. Exercise replays, revision conflicts, invalid inputs, wrong-family rubrics, missing coverage and a rolled-back publication. Test the engine with approved fixtures once the formulas are settled. |
+| next, react, react-dom | Routing, server rendering, layouts and small interactive controls |
+| pg | Explicit PostgreSQL queries and single-connection transactions |
+| zod | Runtime validation of public search/filter/run parameters |
+| @fontsource/inter, @fontsource/ibm-plex-mono | Local font assets, avoiding a build-time remote font dependency |
+| lucide-react | Consistent functional navigation and evidence icons |
+| tsx, node:test, assert | Execute TypeScript commands and meaningful tests |
+| eslint and TypeScript | Static correctness and maintainability checks |
 
-## Risks to resolve
+## Database execution
 
-| Risk | Check |
-| --- | --- |
-| The framework or driver depends on a runtime feature Workers lacks. | Run a local route, read and transaction smoke test in the target runtime before picking the stack variants. |
-| Evidence volume makes a full-cohort publication too slow. | Measure execution time and write size with the synthetic fixture. Keep the transaction short by calculating before opening it. |
-| Evidence IDs differ for the same work or contradict each other. | Define source mappings and test deduplication and exclusion before scoring. |
-| Suggested weights are mistaken for a complete rubric. | Keep the weights proposed and activate only after the actual measures, thresholds and missing-data rules are approved. |
-| A public demo exposes writes or non-synthetic records. | Keep write operations outside the public API and verify fixtures and response fields as part of release review. |
+`getPool()` selects the read-only `DATABASE_URL`. `getPool(true)` selects `DATABASE_ADMIN_URL` for trusted scripts. Pools have bounded connection/query waits. `transaction()` uses one checked-out client from BEGIN through COMMIT/ROLLBACK, then always releases it. SQL values use parameters.
+
+`migrate()` serializes migration work with a PostgreSQL advisory lock, records file checksums in `schema_migrations` and applies each migration transactionally. The nine domain tables remain distinct from that small infrastructure table. Existing migration files must retain their checksums after application. Add a new migration for a later change.
+
+`captureRun()` records an exact cohort, role/level, rubric IDs, evidence/fact IDs, coverage revisions and gaps under repeatable-read isolation. `calculateRun()` uses those pinned inputs. `publishRun()` locks the attempt, checks outcomes against recomputation, inserts the full cohort and changes status atomically. Terminal attempts and append-only rows retain history. The latest published run by ID is selected for reads.
+
+The engine uses integer fractions with BigInt and rounds half up to two decimal places at presentation boundaries. The unrounded weighted values produce the total. Stored components include operands and exact input references. See [the scoring contract](SCORING_CONTRACT.md).
+
+## Errors and consistency
+
+Route handlers return structured 400, 404 or 503 responses. Pages render an explicit unavailable state with retry on a read failure. Database error payloads and connection strings are excluded from API responses. Empty searches and missing evidence have separate states from service outages.
+
+The cohort is small and fixed at 200. The query module loads a published snapshot from PostgreSQL and applies directory search/filter/pagination to that bounded snapshot. This keeps historical role/name context consistent. Large datasets would need indexed SQL search and pagination over a persistent snapshot projection. Raw evidence is loaded only for one detail view.
+
+## Cloudflare compatibility research
+
+Cloudflare currently recommends vinext for its Next.js API surface on Workers, and labels it beta. This local delivery keeps standard Next.js development while the hosting choice awaits a separately authorized deployment review. The repository's earlier OpenNext alternative is a deployment candidate whose support needs checking against the selected Next.js version. [Cloudflare Next.js guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/)
+
+The installed pg version exceeds Cloudflare Hyperdrive's documented minimum. A future Worker needs the appropriate Node.js compatibility flag and a request-scoped Client using the Hyperdrive binding. The local Node pool is the local-development implementation. Worker bindings, managed credentials, region placement, backups and a Worker-runtime smoke test remain part of the later hosting work. [Cloudflare node-postgres guide](https://developers.cloudflare.com/hyperdrive/examples/connect-to-postgres/postgres-drivers-and-libraries/node-postgres/)
